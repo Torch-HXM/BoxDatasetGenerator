@@ -20,7 +20,7 @@ light.intensity = 0.7;
 
 // camera
 var camera = new BABYLON.ArcRotateCamera("camera", 45, 0, 0, new BABYLON.Vector3(0, 0, -0), scene);
-camera.setPosition(new BABYLON.Vector3(0, 70, -70));
+camera.setPosition(new BABYLON.Vector3(0, 130, -130));
 camera.attachControl(canvas, true);
 
 // ground
@@ -67,25 +67,58 @@ function createRandomBox(){
       scene
     );
 
-    var box = new BABYLON.MeshBuilder.CreateBox("medicine1", options, scene);
-    var random_birth_pos = Math.random()*container_size/2-container_size/4;
+    var box = new BABYLON.MeshBuilder.CreateBox("medicine"+counter, options, scene);
     box.material = mat;
-    box.position = new BABYLON.Vector3(random_birth_pos, container_size, random_birth_pos);
-    box.physicsImpostor = new BABYLON.PhysicsImpostor(box, BABYLON.PhysicsImpostor.BoxImpostor, {mass:POSPAIR[0]["width"]*POSPAIR[0]["height"]*POSPAIR[0]["depth"]/10, restitution:0.3}, scene);
+    box.position = new BABYLON.Vector3(Math.random()*container_size/2-container_size/4, container_size, Math.random()*container_size/2-container_size/4);
+    box.rotation = new BABYLON.Vector3(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+    box.physicsImpostor = new BABYLON.PhysicsImpostor(
+      box, 
+      BABYLON.PhysicsImpostor.BoxImpostor, 
+      {mass:POSPAIR[random_num]["width"]*POSPAIR[random_num]["height"]*POSPAIR[random_num]["depth"], restitution:0.3}, 
+      scene
+    );
     box.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(0, -20, 0));
     boxes.push(box);
     counter += 1;
 
-    setTimeout(createRandomBox, 1000);
+    setTimeout(createRandomBox, 200);
   }
 }
 createRandomBox();
 
-// 渲染场景
+// render
+let highlight = new BABYLON.HighlightLayer('highlight',scene,{camera:camera});
+var heigh_rule = {"index":0, "y":0};
+var angle_rule = {"index":0, "angle":90};
+
 engine.runRenderLoop(()=>{
+  // highlight
+  highlight.removeAllMeshes();
+  heigh_rule["y"] = 0;
+  angle_rule["angle"] = 90;
+  for(var i=0;i<counter;i++){
+    // for height
+    if(boxes[i].position.y >= heigh_rule["y"]){
+      heigh_rule["index"] = i;
+      heigh_rule["y"] = boxes[i].position.y;
+    }
+    // for angle
+    // console.log(boxes[i].rotationQuaternion.toEulerAngles());
+    // float r1, r2, r3;     	//旋转向量
+    // float qx, qy, qz, qw; 	//四元数
+    // float theta；	        //角度
+
+    // //四元数转旋转向量
+    // float theta = 2 * acosf(qw);
+    // r1 = qx / sinf(theta * 0.5f) * theta;
+    // r2 = qy / sinf(theta * 0.5f) * theta;
+    // r3 = qz / sinf(theta * 0.5f) * theta;
+  }
+  highlight.addMesh(boxes[heigh_rule["index"]], BABYLON.Color3.Blue());
+  
   scene.render();
 });
-// 监听窗口大小变化
+// resize
 window.addEventListener("resize", ()=>{
   engine.resize();
 });
