@@ -1,5 +1,6 @@
 import './style.css'
 import * as BABYLON from "babylonjs"
+import {getTexture, POSPAIR} from "./textures.js"
 import * as cannon from "https://cdn.babylonjs.com/cannon.js"
 
 // canvas layout
@@ -18,8 +19,8 @@ const light = new BABYLON.HemisphericLight( "light1", new BABYLON.Vector3(0, 1, 
 light.intensity = 0.7;
 
 // camera
-const camera = new BABYLON.FreeCamera( "camera", new BABYLON.Vector3(0, 100, -100), scene);
-camera.setTarget(BABYLON.Vector3.Zero());
+var camera = new BABYLON.ArcRotateCamera("camera", 45, 0, 0, new BABYLON.Vector3(0, 0, -0), scene);
+camera.setPosition(new BABYLON.Vector3(0, 70, -70));
 camera.attachControl(canvas, true);
 
 // ground
@@ -50,20 +51,27 @@ for(var i=0; i<4; i++){
 // boxes
 var counter = 0;
 var boxes = [];
-var box_birth_pos = new BABYLON.Vector3(0, container_size, 0);
-
-var box_sizes = [{width:13, height:3, depth:4.5}, {}, {}];
-
-var box_material = new BABYLON.StandardMaterial("box material", scene);
-box_material.diffuseColor = BABYLON.Color3.Red();
 
 function createRandomBox(){
-  if(counter < 100){
-    var box = new BABYLON.MeshBuilder.CreateBox("box"+counter, {width:13, height:3, depth:4.5}, scene);
-    box.position = box_birth_pos;
-    box.
-    box.material = box_material;
-    box.physicsImpostor = new BABYLON.PhysicsImpostor(box, BABYLON.PhysicsImpostor.BoxImpostor, {mass:2, restitution:0.3}, scene);
+  if(counter < 30){
+    var random_num = Math.floor(Math.random()*3);
+    var mat = new BABYLON.StandardMaterial("map1", scene);
+    var options = getTexture(
+      mat, 
+      POSPAIR[random_num]["file_path"], 
+      POSPAIR[random_num]["map_size"], 
+      POSPAIR[random_num]["pos_pair"], 
+      POSPAIR[random_num]["width"], 
+      POSPAIR[random_num]["height"], 
+      POSPAIR[random_num]["depth"], 
+      scene
+    );
+
+    var box = new BABYLON.MeshBuilder.CreateBox("medicine1", options, scene);
+    var random_birth_pos = Math.random()*container_size/2-container_size/4;
+    box.material = mat;
+    box.position = new BABYLON.Vector3(random_birth_pos, container_size, random_birth_pos);
+    box.physicsImpostor = new BABYLON.PhysicsImpostor(box, BABYLON.PhysicsImpostor.BoxImpostor, {mass:POSPAIR[0]["width"]*POSPAIR[0]["height"]*POSPAIR[0]["depth"]/10, restitution:0.3}, scene);
     box.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(0, -20, 0));
     boxes.push(box);
     counter += 1;
