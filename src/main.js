@@ -28,7 +28,7 @@ camera.attachControl(canvas, true);
 createContainer(scene);
 
 // boxes
-var boxes_data = {"counter":0, "max_num":200, "box":[], "matrix":[]};
+var boxes_data = {"counter":0, "max_num":200, "box":[], "notOcculudedBoxId":[]};
 function createBoxes(){
   if(boxes_data["counter"] < boxes_data["max_num"]){
     var box = createRandomBox(boxes_data["counter"], scene);

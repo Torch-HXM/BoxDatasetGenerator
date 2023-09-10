@@ -70,5 +70,6 @@ export function createRandomBox(counter, scene){
     scene
   );
   box.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(0, -20, 0));
+
   return box;
 }
