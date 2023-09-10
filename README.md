@@ -22,9 +22,9 @@
 判断逻辑如下：
 1. ~~判断药盒在相机视角中是否可见或部分可见~~
     1. 原理
-    [API](https://doc.babylonjs.com/features/featuresDeepDive/occlusionQueries "occlusionQueries")~~
+    [API](https://doc.babylonjs.com/features/featuresDeepDive/occlusionQueries "occlusionQueries")，该判断的主要作用是减少后续对盒子表面点的计算，所以试图先抛弃一部分不可见的盒子。
     2. 问题
-    由于绝大多数药盒的表面都是透过缝隙可见，所以该判断并不能大量的减少后续需要计算的药盒数量，反而会占用大量的计算资源，故而将该步骤舍弃掉。
+    由于Babylon的该API对模型是否被遮挡的判断十分保守，使得绝大多数药盒都被判定为可见，所以该判断并不能大量的减少后续需要计算的药盒数量，反而会占用大量的计算资源，故而将该步骤舍弃掉。
 2. 求可见或部分可见的药盒表面与相机视锥的交点以获得药盒的裸露表面
     1. 原理[^1]
         1. **模型矩阵**将局部坐标系下的点转化为世界坐标系下的点。<u>局部坐标系=>世界坐标系</u>

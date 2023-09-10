@@ -39,6 +39,10 @@ function createBoxes(){
 }
 createBoxes();
 
+function getAllPoint(){
+  
+}
+
 // render
 engine.runRenderLoop(()=>{
   scene.render();
