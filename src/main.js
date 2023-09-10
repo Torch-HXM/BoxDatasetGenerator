@@ -1,7 +1,7 @@
 import './style.css'
 import * as BABYLON from "babylonjs"
 import * as cannon from "https://cdn.babylonjs.com/cannon.js"
-import {createRandomBox} from "./module/box.js"
+import {createRandomBox, boxPointGenerator} from "./module/box.js"
 import {createContainer} from "./module/container.js"
 
 // canvas layout
@@ -25,23 +25,33 @@ camera.setPosition(new BABYLON.Vector3(0, 150, -150));
 camera.attachControl(canvas, true);
 
 // container
-createContainer(scene);
+// createContainer(scene);
 
 // boxes
-var boxes_data = {"counter":0, "max_num":200, "box":[], "notOcculudedBoxId":[]};
-function createBoxes(){
-  if(boxes_data["counter"] < boxes_data["max_num"]){
-    var box = createRandomBox(boxes_data["counter"], scene);
-    boxes_data["box"].push(box);
-    boxes_data["counter"] += 1;
-    setTimeout(createBoxes, 20);
+// var boxes_data = {"counter":0, "max_num":200, "box":[], "worldMatrix":[], "notOcculudedBoxId":[]};
+// function createBoxes(){
+//   if(boxes_data["counter"] < boxes_data["max_num"]){
+//     var box = createRandomBox(boxes_data["counter"], scene);
+//     boxes_data["box"].push(box);
+//     boxes_data["worldMatrix"].push(box.computeWorldMatrix(true));
+//     boxes_data["counter"] += 1;
+//     setTimeout(createBoxes, 20);
+//   }
+// }
+// createBoxes();
+
+var box = new BABYLON.MeshBuilder.CreateBox("test", {width:14, height:4, depth:8}, scene);
+var material = new BABYLON.StandardMaterial();
+material.alpha = 0.3;
+box.material = material;
+
+var box_point = boxPointGenerator(14, 4, 8, 2);
+for(var i=0;i<6;i++){
+  for(var j=0;j<box_point[i].length;j++){
+    var sphare = new BABYLON.MeshBuilder.CreateSphere("s"+i+j, {diameter:1}, scene);
   }
 }
-createBoxes();
 
-function getAllPoint(){
-  
-}
 
 // render
 engine.runRenderLoop(()=>{

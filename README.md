@@ -31,5 +31,8 @@
         - **视图矩阵**将世界坐标系下的点转换为视图坐标系下的点。<u>世界坐标系=>视图坐标系</u>
         - **投影矩阵**将视图坐标系下的点转换到规范立方体之中。&emsp;<u>视图坐标系=>规范立方体</u>
     + 相关API
+        - [computeWorldMatrix](https://doc.babylonjs.com/features/featuresDeepDive/mesh/transforms/center_origin/ref_frame):&emsp;**模型矩阵**
+    + 做法
+        - 首先需要将盒子的表面用有限个点来表示。我们采取的方法是，将表面划分为多个s*s的方格，所有方格的中心点的集合将用来表示该平面。其中s代表的是机械臂吸盘的直径。
 
 [^1]:[3D物体渲染到2D屏幕的矩阵变换过程：模型变换（Modeling Trans）、视图变换(View Trans)和投影变换(Projection Trans)](https://zhuanlan.zhihu.com/p/466508365)
