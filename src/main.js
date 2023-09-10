@@ -38,9 +38,9 @@ function createBoxes(){
   }
 }
 createBoxes();
+
 // render
 engine.runRenderLoop(()=>{
-  
   scene.render();
 });
 // resize
