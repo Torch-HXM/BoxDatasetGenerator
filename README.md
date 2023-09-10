@@ -21,8 +21,8 @@
 抓取面是指抓取点所在的表面。获得抓取面是我们获得所有标签的前提是。这里需要注意，裸露在世界中的药盒表面并不一定存在于相机视角中，也就是说，即使这个裸露面是存在的，如果相机拍不到我们就应该当它不存在。因此，这里的抓取面应该特指相机视角中的抓取面。而获得该抓取面，需要判断药盒的表面是否存在于相机的视锥点云中。
 判断逻辑如下：
 1. ~~判断药盒在相机视角中是否可见或部分可见~~
-    1. 原理
-    <font size=3>[API](https://doc.babylonjs.com/features/featuresDeepDive/occlusionQueries "occlusionQueries")，该判断的主要作用是减少后续对盒子表面点的计算，所以试图先抛弃一部分不可见的盒子。</font>
+    1. 原理[API](https://doc.babylonjs.com/features/featuresDeepDive/occlusionQueries "occlusionQueries")
+    <font size=3>该判断的主要作用是减少后续对盒子表面点的计算，所以试图先抛弃一部分不可见的盒子。</font>
     2. 问题
     <font size=3>由于Babylon的该API对模型是否被遮挡的判断十分保守，使得绝大多数药盒都被判定为可见，所以该判断并不能大量的减少后续需要计算的药盒数量，反而会占用大量的计算资源，故而将该步骤舍弃掉。</font>
 2. 求可见或部分可见的药盒表面与相机视锥的交点以获得药盒的裸露表面
