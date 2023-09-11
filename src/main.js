@@ -28,7 +28,7 @@ camera.attachControl(canvas, true);
 createContainer(scene);
 
 // boxes
-var boxes_data = {"counter":0, "max_num":20, "c":2, "box":[], "patches":[], "points":[]};
+var boxes_data = {"counter":0, "max_num":100, "c":2, "box":[], "patches":[], "points":[]};
 function createBoxes(){
   if(boxes_data["counter"] < boxes_data["max_num"]){
     const box_and_patches = createRandomBox(boxes_data["counter"], boxes_data["c"], scene);
@@ -58,6 +58,7 @@ function keepStill(){
         scene.removeMesh(boxes_data["box"][i]);
         boxes_data["box"].splice(i, 1);
         boxes_data["patches"].splice(i, 1);
+        boxes_data["points"].splice(i, 1);
         i--;
       }
       else{
