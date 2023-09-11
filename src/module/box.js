@@ -37,18 +37,16 @@ var POSPAIR = {
 function surfacePointGenerator(x_length, y_length, offset_vector, rotation_quaternion, s){
   var col = Math.floor(x_length/s);
   var row = Math.floor(y_length/s);
-  var base_length = s/2
   var surface_points = [];
 
   for(var c=0;c<col;c++){
     for(var r=0;r<row;r++){
-      var point_vector = new BABYLON.Vector3((c+1)*base_length-x_length/2, (r+1)*base_length-y_length/2, 0);
-      // point_vector = point_vector.applyRotationQuaternion(rotation_quaternion);
-      // point_vector.add(offset_vector);
+      var point_vector = new BABYLON.Vector3((c+0.5)*s-x_length/2, (r+0.5)*s-y_length/2, 0);
+      point_vector = point_vector.applyRotationQuaternion(rotation_quaternion);
+      point_vector = point_vector.add(offset_vector);
       surface_points.push(point_vector);
     }
   }
-  console.log(surface_points);
   return surface_points;
 }
 
@@ -74,8 +72,6 @@ export function boxPointGenerator(width, height, depth, s){
   
   for(var i=0;i<offset_vectors.length;i++){
     var surface_points = surfacePointGenerator(x_lengths[i], y_lengths[i], offset_vectors[i], rotation_quaternions[i], s);
-    console.log("%d:%d", i, surface_points.length);
-    // console.log(surface_point);
     box_points[i] = surface_points;
   }
 
@@ -122,6 +118,9 @@ export function createRandomBox(counter, scene){
     scene
   );
   box.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(0, -20, 0));
+
+  box.occlusionQueryAlgorithmType = BABYLON.AbstractMesh.OCCLUSION_ALGORITHM_TYPE_CONSERVATIVE;
+  box.occlusionType = BABYLON.AbstractMesh.OCCLUSION_TYPE_STRICT;
 
   return box;
 }

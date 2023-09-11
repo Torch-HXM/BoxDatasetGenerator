@@ -24,21 +24,7 @@ var camera = new BABYLON.ArcRotateCamera("camera", 45, 0, 0, new BABYLON.Vector3
 camera.setPosition(new BABYLON.Vector3(0, 150, -150));
 camera.attachControl(canvas, true);
 
-// container
-// createContainer(scene);
-
-// boxes
-// var boxes_data = {"counter":0, "max_num":200, "box":[], "worldMatrix":[], "notOcculudedBoxId":[]};
-// function createBoxes(){
-//   if(boxes_data["counter"] < boxes_data["max_num"]){
-//     var box = createRandomBox(boxes_data["counter"], scene);
-//     boxes_data["box"].push(box);
-//     boxes_data["worldMatrix"].push(box.computeWorldMatrix(true));
-//     boxes_data["counter"] += 1;
-//     setTimeout(createBoxes, 20);
-//   }
-// }
-// createBoxes();
+// patches
 
 var box = new BABYLON.MeshBuilder.CreateBox("test box", {width:14, height:8, depth:4}, scene);
 var material = new BABYLON.StandardMaterial("box material", scene);
@@ -75,16 +61,6 @@ for(var i=0;i<6;i++){
 
 // render
 engine.runRenderLoop(()=>{
-  // var numOccluded = 0;
-  // for(var i=0;i<boxes_data["box"].length;i++){
-  //   if(boxes_data["box"][i].position.y<0){
-  //     boxes_data["box"].splice(i, 1);
-  //   }
-  //   else if(boxes_data["box"][i].isOccluded){
-  //     numOccluded++;
-  //   }
-  // }
-  // console.log("all:%d, Occluded:%d.", boxes_data["box"].length, numOccluded);
   scene.render();
 });
 // resize
