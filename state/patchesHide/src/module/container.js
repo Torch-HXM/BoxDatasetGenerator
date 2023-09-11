@@ -4,7 +4,7 @@ import * as cannon from "https://cdn.babylonjs.com/cannon.js"
 export var container_base_data = {
     "size":72,
     "depth":1,
-    "alpha":1,
+    "alpha":0.3,
     "restitution":0.2,
 }
 

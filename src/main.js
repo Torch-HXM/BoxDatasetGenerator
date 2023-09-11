@@ -1,8 +1,8 @@
 import './style.css'
 import * as BABYLON from "babylonjs"
 import * as cannon from "https://cdn.babylonjs.com/cannon.js"
-import {createRandomBox, boxPointGenerator} from "./module/box.js"
-import {createContainer} from "./module/container.js"
+import {createRandomBox} from "./module/box.js"
+import {createContainer, container_base_data} from "./module/container.js"
 
 // canvas layout
 const canvas = document.createElement("canvas");
@@ -28,130 +28,102 @@ camera.attachControl(canvas, true);
 createContainer(scene);
 
 // boxes
-var boxes_data = {"counter":0, "max_num":180, "box":[]};
+var boxes_data = {"counter":0, "max_num":20, "c":2, "box":[], "patches":[], "points":[]};
 function createBoxes(){
   if(boxes_data["counter"] < boxes_data["max_num"]){
-    var box = createRandomBox(boxes_data["counter"], scene);
-    boxes_data["box"].push(box);
+    const box_and_patches = createRandomBox(boxes_data["counter"], boxes_data["c"], scene);
+    boxes_data["box"].push(box_and_patches["box"]);
+    boxes_data["patches"].push(box_and_patches["patches"]);
+    boxes_data["points"].push(box_and_patches["points"]);
     boxes_data["counter"] += 1;
-    setTimeout(createBoxes, 20);
+    setTimeout(createBoxes, 40);
   }
 }
 console.log("creating box.");
 createBoxes();
 
-// var box = new BABYLON.MeshBuilder.CreateBox("test box", {width:14, height:8, depth:4}, scene);
-// var material = new BABYLON.StandardMaterial("box material", scene);
-// material.alpha = 1;
-// box.material = material;
+// keep still
+const speed_limit = 0.5;
+const angle_limit = 0.5;
+const still_threshold = 100;
+var still_counter = 0;
 
-// var box_points = boxPointGenerator(14, 8, 4, 2);
-// var planes = [];
-// var plane_material = new BABYLON.StandardMaterial("plane material", scene);
-// plane_material.diffuseColor = new BABYLON.Color3.Yellow();
+var ifStillObserver = new BABYLON.Observable();
 
-// for(var i=0;i<6;i++){
-//   var rotation_quaternion;
-//   if(i==0 | i==1){
-//     rotation_quaternion = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z, 0);
-//   }
-//   else if(i==2 | i==3){
-//     rotation_quaternion = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, Math.PI/2);
-//   }
-//   else{
-//     rotation_quaternion = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, Math.PI/2);
-//   }
+function keepStill(){
+  if(still_counter<still_threshold){
+    var if_still = true;
+    for(var i=0;i<boxes_data["box"].length;i++){
+      if(boxes_data["box"][i].position.y<0 | boxes_data["box"][i].position.y>container_base_data["size"]){
+        scene.removeMesh(boxes_data["box"][i]);
+        boxes_data["box"].splice(i, 1);
+        boxes_data["patches"].splice(i, 1);
+        i--;
+      }
+      else{
+        const box_linear_speed = boxes_data["box"][i].physicsImpostor.getLinearVelocity();
+        const box_angle_speed = boxes_data["box"][i].physicsImpostor.getAngularVelocity();
+        const if_linear_speed_tolerate = box_linear_speed.x <= speed_limit && box_linear_speed.y <= speed_limit && box_linear_speed.z <= speed_limit;
+        const if_angle_speed_tolerate = box_angle_speed.x <= angle_limit && box_angle_speed.y <= angle_limit && box_angle_speed.z <= angle_limit;
 
-//   for(var j=0;j<box_points[i].length;j++){
-//     var plane = new BABYLON.MeshBuilder.CreatePlane("p"+i+j, {size:1}, scene);
-//     plane.rotationQuaternion = rotation_quaternion;
-//     plane.position = box_points[i][j];
-//     plane.material = plane_material;
-//     plane.occlusionQueryAlgorithmType = BABYLON.AbstractMesh.OCCLUSION_ALGORITHM_TYPE_CONSERVATIVE;
-//     plane.occlusionType = BABYLON.AbstractMesh.OCCLUSION_TYPE_STRICT;
-//     planes.push(plane);
-//   }
-// }
+        if_still = if_still && if_linear_speed_tolerate && if_angle_speed_tolerate;
+      }
+    }
+    if(if_still){
+      still_counter++;
+    }
+    else{
+      still_counter=0;
+    }
+  }
+  else if(still_counter==still_threshold){
+    for(var i=0;i<boxes_data["box"].length;i++){
+      boxes_data["box"][i].physicsImpostor.sleep();
+      delete boxes_data["box"][i].physicsImpostor;
+    }
+    still_counter++;
+    console.log("keep still", still_counter);
+    console.log("box number: %d", boxes_data["box"].length);
+  }
+  else{
+    ifStillObserver.notifyObservers();
+    scene.onBeforeRenderObservable.remove(keepStill);
+  }
+}
+scene.onBeforeRenderObservable.add(keepStill);
 
-// // keep still
-// var speed_limit = 0.5;
-// var angle_limit = 0.5;
-// var still_counter = 0;
-// var still_threshold = 100;
+// patches
+function applyPatches(){
+  console.log("apply patches");
+  for(var k=0;k<boxes_data["patches"].length;k++){
+    var patches = boxes_data["patches"][k];
+    var box = boxes_data["box"][k];
+    var points = boxes_data["points"][k];
+    box.material.alpha = 0.1;
 
-// function keepStill(){
-//   if(still_counter<still_threshold){
-//     var if_still = true;
-//     for(var i=0;i<boxes_data["box"].length;i++){
-//       if(boxes_data["box"][i].position.y<0){
-//         boxes_data["box"].splice(i, 1);
-//       }
-//       else{
-//         var box_linear_speed = boxes_data["box"][i].physicsImpostor.getLinearVelocity();
-//         var box_angle_speed = boxes_data["box"][i].physicsImpostor.getAngularVelocity();
-//         var if_linear_speed_tolerate = box_linear_speed.x <= speed_limit && box_linear_speed.y <= speed_limit && box_linear_speed.z <= speed_limit;
-//         var if_angle_speed_tolerate = box_angle_speed.x <= angle_limit && box_angle_speed.y <= angle_limit && box_angle_speed.z <= angle_limit;
+    for(var i=0;i<6;i++){
+      for(var j=0;j<patches[i].length;j++){
+        var plane = patches[i][j];
+        plane.isVisible = true;
+        plane.position = box.position;
+        const box_matrix = box.computeWorldMatrix();
+        const box_rotation = box.rotationQuaternion.toEulerAngles();
 
-//         if_still = if_still && if_linear_speed_tolerate && if_angle_speed_tolerate;
-//       }
-//     }
-//     if(if_still){
-//       still_counter++;
-//     }
-//     else{
-//       still_counter=0;
-//     }
-//   }
-//   else if(still_counter==still_threshold){
-//     for(var i=0;i<boxes_data["box"].length;i++){
-//       boxes_data["box"][i].physicsImpostor.sleep();
-//     }
-//     still_counter++;
-//     console.log("keep still", still_counter);
-//     console.log("box number: %d", boxes_data["box"].length);
-//   }
-//   else{
-//     // scene.registerBeforeRender(applyPatches);
-//     scene.unregisterBeforeRender(keepStill);
-//   }
-// }
-// scene.registerBeforeRender(keepStill);
-
-// // patches
-// var c = 2;
-// function applyPatches(){
-//   for(var k=0;k<boxes_data["box"].length;k++){
-//     var box = boxes_data["box"][k];
-//     box.material.alpha = 0.3;
-//     var box_points = boxPointGenerator(box.width, box.height, box.depth, c);
-//     var plane_material = new BABYLON.StandardMaterial("plane material", scene);
-//     plane_material.diffuseColor = new BABYLON.Color3.Yellow();
-
-//     for(var i=0;i<6;i++){
-//       var rotation_quaternion;
-//       if(i==0 | i==1){
-//         rotation_quaternion = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z, 0);
-//       }
-//       else if(i==2 | i==3){
-//         rotation_quaternion = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, Math.PI/2);
-//       }
-//       else{
-//         rotation_quaternion = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, Math.PI/2);
-//       }
-
-//       for(var j=0;j<box_points[i].length;j++){
-//         var plane = new BABYLON.MeshBuilder.CreatePlane("p"+i+j, {size:1}, scene);
-//         plane.rotationQuaternion = rotation_quaternion;
-//         plane.position = box_points[i][j];
-//         plane.material = plane_material;
-//         plane.occlusionQueryAlgorithmType = BABYLON.AbstractMesh.OCCLUSION_ALGORITHM_TYPE_CONSERVATIVE;
-//         plane.occlusionType = BABYLON.AbstractMesh.OCCLUSION_TYPE_STRICT;
-//         // planes.push(plane);
-//       }
-//     }
-//   }
-//   scene.unregisterBeforeRender(applyPatches);
-// }
+        if(i==0 | i==1){
+          plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z);
+        }
+        else if(i==2 | i==3){
+          plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z).addRotation(0, Math.PI/2, 0);
+        }
+        else{
+          plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z).addRotation(Math.PI/2, 0, 0);
+        }
+        plane.position = BABYLON.Vector3.TransformCoordinates(points[i][j], box_matrix);
+      }
+    }
+  }
+}
+ifStillObserver.addOnce(applyPatches);
 
 // render
 engine.runRenderLoop(()=>{

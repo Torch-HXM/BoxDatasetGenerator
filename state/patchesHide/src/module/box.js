@@ -115,15 +115,15 @@ export function createRandomBox(counter, c, scene){
   box.width = POSPAIR[random_num]["width"];
   box.height = POSPAIR[random_num]["height"];
   box.depth = POSPAIR[random_num]["depth"];
-  box.position = new BABYLON.Vector3((Math.random()*container_base_data["size"]/2-container_base_data["size"]/4), container_base_data["size"], (Math.random()*container_base_data["size"]/2-container_base_data["size"]/4));
+  box.position = new BABYLON.Vector3((Math.random()*container_base_data["size"]/2-container_base_data["size"]/4)/5, container_base_data["size"]/5, (Math.random()*container_base_data["size"]/2-container_base_data["size"]/4)/5);
   box.rotation = new BABYLON.Vector3(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
-  box.physicsImpostor = new BABYLON.PhysicsImpostor(
-    box, 
-    BABYLON.PhysicsImpostor.BoxImpostor, 
-    {mass:POSPAIR[random_num]["width"]*POSPAIR[random_num]["height"]*POSPAIR[random_num]["depth"], restitution:0.1}, 
-    scene
-  );
-  box.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(0, -20, 0));
+  // box.physicsImpostor = new BABYLON.PhysicsImpostor(
+  //   box, 
+  //   BABYLON.PhysicsImpostor.BoxImpostor, 
+  //   {mass:POSPAIR[random_num]["width"]*POSPAIR[random_num]["height"]*POSPAIR[random_num]["depth"], restitution:0.1}, 
+  //   scene
+  // );
+  // box.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(0, -20, 0));
 
   // create patches
   var planes = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[]};
