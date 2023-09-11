@@ -39,7 +39,7 @@ export function createContainer(scene){
         "size":72,
         "depth":0.1,
         "material":new BABYLON.StandardMaterial("limit edges material", scene), 
-        "alpha":0,
+        "alpha":0.3,
         "restitution":0.5,
     }
     limit_base_data["material"].alpha = limit_base_data["alpha"];
