@@ -56,12 +56,14 @@ export function boxPointGenerator(width, height, depth, s){
   var x_lengths = [width, width, depth, depth, width, width];
   var y_lengths = [height, height, height, height, depth, depth];
 
-  var offset_vectors = [new BABYLON.Vector3(0, 0, depth/2), 
-                        new BABYLON.Vector3(0, 0, -depth/2),
-                        new BABYLON.Vector3(width/2, 0, 0),
-                        new BABYLON.Vector3(-width/2, 0, 0),
-                        new BABYLON.Vector3(0, height/2, 0),
-                        new BABYLON.Vector3(0, -height/2, 0)];
+  var pice = 0.01;
+
+  var offset_vectors = [new BABYLON.Vector3(0, 0, depth/2+pice), 
+                        new BABYLON.Vector3(0, 0, -(depth/2+pice)),
+                        new BABYLON.Vector3(width/2+pice, 0, 0),
+                        new BABYLON.Vector3(-(width/2+pice), 0, 0),
+                        new BABYLON.Vector3(0, height/2+pice, 0),
+                        new BABYLON.Vector3(0, -(height/2+pice), 0)];
 
   var rotation_quaternions = [BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z, 0),
                               BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z, 0),
@@ -94,8 +96,9 @@ function getTexture(mat, file_path, map_size, pos_pair, width, height, depth, sc
 }
 
 export function createRandomBox(counter, scene){
+  // create box
   var random_num = Math.floor(Math.random()*3);
-  var mat = new BABYLON.StandardMaterial("map1", scene);
+  var mat = new BABYLON.StandardMaterial("UV"+counter, scene);
   var options = getTexture(
     mat, 
     POSPAIR[random_num]["file_path"], 
@@ -107,8 +110,11 @@ export function createRandomBox(counter, scene){
     scene
   );
 
-  var box = new BABYLON.MeshBuilder.CreateBox("medicine"+counter, options, scene);
+  var box = new BABYLON.MeshBuilder.CreateBox("box"+counter, options, scene);
   box.material = mat;
+  box.width = POSPAIR[random_num]["width"];
+  box.height = POSPAIR[random_num]["height"];
+  box.depth = POSPAIR[random_num]["depth"];
   box.position = new BABYLON.Vector3(Math.random()*container_base_data["size"]/2-container_base_data["size"]/4, container_base_data["size"], Math.random()*container_base_data["size"]/2-container_base_data["size"]/4);
   box.rotation = new BABYLON.Vector3(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
   box.physicsImpostor = new BABYLON.PhysicsImpostor(
@@ -118,9 +124,5 @@ export function createRandomBox(counter, scene){
     scene
   );
   box.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(0, -20, 0));
-
-  box.occlusionQueryAlgorithmType = BABYLON.AbstractMesh.OCCLUSION_ALGORITHM_TYPE_CONSERVATIVE;
-  box.occlusionType = BABYLON.AbstractMesh.OCCLUSION_TYPE_STRICT;
-
   return box;
 }
