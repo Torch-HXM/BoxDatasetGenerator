@@ -15,8 +15,7 @@
 + 盒子姿态
 + 抓取难度评分
 ## 如何造成盒子的无序状态
-为开启物理引擎，使大量的盒子从空中坠入容器中。也正因为如此，为了防止盒子掉入虚空，我们为容器和盒子的掉落路径设置了空气墙。
-![容器示例](./url/container.png)
+为开启物理引擎，使大量的盒子从空中坠入容器中。也正因为如此，为了防止盒子掉入虚空，我们为容器和盒子的掉落路径设置了空气墙。![容器示例](./url/container.png)
 ## 数据集标签的生成逻辑
 ### 世界和相机视角中的抓取面
 抓取面是指抓取点所在的表面。获得抓取面是我们获得所有标签的前提是。这里需要注意，裸露在世界中的药盒表面并不一定存在于相机视角中，也就是说，即使这个裸露面是存在的，如果相机拍不到我们就应该当它不存在。因此，这里的抓取面应该特指相机视角中的抓取面。而获得该抓取面，需要判断药盒的表面是否存在于相机的视锥点云中。
@@ -30,58 +29,65 @@
     + 为盒子贴片
         - 为了更好的判断盒子表面的可见性和更好的获得可见的面积，我们选择将盒子的表面分割为正方形网格，这些网格代表表面的最小面积单元。后续的表面积计算和可见性计算都将依赖这些最小单元进行。
         - 虽然这样做会使得表面积的计算变得不准确，但是，逐点的计算盒子的表面积显然是不可能实现的，因此，我们只能采用这样的近似的方法。
-        - 表面积的最小单元的大小为**s*s**，其中s代表的是机械臂吸盘的直径。
-        ![贴片示例](./url/patches.png)
-        - 经过测试，为盒子贴片能够完美的获得贴片是否被隐藏以及隐藏了多少。
-        ![贴片的隐藏状况](./url/patchesHide.png)
+        - 表面积的最小单元的大小为**s*s**，其中s代表的是机械臂吸盘的直径。![贴片示例](./url/patches.png)
+        - 经过测试，为盒子贴片能够完美的获得贴片是否被隐藏以及隐藏了多少。![贴片的隐藏状况](./url/patchesHide.png)
         - 为空间中随机位置随机姿态的盒子进行贴片，先将贴片的姿态和位置与盒子同步，这里需要注意，为了后续继续对姿态进行旋转，这里同步姿态必须要用[addRotation](https://doc.babylonjs.com/features/featuresDeepDive/mesh/transforms/center_origin/add_rotations)方法。在同步姿态和位置后，将贴片旋转使他们分别与盒子的六个表面平行。最后将贴片移动至盒子表面。完成盒子的贴片操作。
-        ```javascript
-        var box_world_matrix = box.computeWorldMatrix();
+        - ```javascript
+            var box_world_matrix = box.computeWorldMatrix();
 
-        for(var i=0;i<6;i++){
-            for(var j=0;j<patches[i].length;j++){
-                var plane = patches[i][j];
-                plane.isVisible = true;
-                plane.position = box.position;
-                if(i==0 | i==1){
-                plane.addRotation(box.rotation.x, box.rotation.y, box.rotation.z);
+            for(var i=0;i<6;i++){
+                for(var j=0;j<patches[i].length;j++){
+                    var plane = patches[i][j];
+                    plane.isVisible = true;
+                    plane.position = box.position;
+                    if(i==0 | i==1){
+                    plane.addRotation(box.rotation.x, box.rotation.y, box.rotation.z);
+                    }
+                    else if(i==2 | i==3){
+                    plane.addRotation(box.rotation.x, box.rotation.y, box.rotation.z).addRotation(0, Math.PI/2, 0);
+                    }
+                    else{
+                    plane.addRotation(box.rotation.x, box.rotation.y, box.rotation.z).addRotation(Math.PI/2, 0, 0);
+                    }
+                    plane.position = BABYLON.Vector3.TransformCoordinates(points[i][j], box_world_matrix);
                 }
-                else if(i==2 | i==3){
-                plane.addRotation(box.rotation.x, box.rotation.y, box.rotation.z).addRotation(0, Math.PI/2, 0);
-                }
-                else{
-                plane.addRotation(box.rotation.x, box.rotation.y, box.rotation.z).addRotation(Math.PI/2, 0, 0);
-                }
-                plane.position = BABYLON.Vector3.TransformCoordinates(points[i][j], box_world_matrix);
             }
-        }
-        ```
-        ![对自由姿态的盒子贴片](./url/patchesFreePosture.png)
+          ```
+        - ![对自由姿态的盒子贴片](./url/patchesFreePosture.png)
         - 特别需要注意的是，由于我们使用了物理引擎，物理引擎中的一些方法造成了**Mesh.rotation**被弃用，且固定为0，因此上面的代码需要更改为如下：
-        ```javascript
-        for(var i=0;i<6;i++){
-            for(var j=0;j<patches[i].length;j++){
-                var plane = patches[i][j];
-                plane.isVisible = true;
-                plane.position = box.position;
-                const box_matrix = box.computeWorldMatrix();
-                const box_rotation = box.rotationQuaternion.toEulerAngles();
+        - ```javascript
+            for(var i=0;i<6;i++){
+                for(var j=0;j<patches[i].length;j++){
+                    var plane = patches[i][j];
+                    plane.isVisible = true;
+                    plane.position = box.position;
+                    const box_matrix = box.computeWorldMatrix();
+                    const box_rotation = box.rotationQuaternion.toEulerAngles();
 
-                if(i==0 | i==1){
-                plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z);
+                    if(i==0 | i==1){
+                    plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z);
+                    }
+                    else if(i==2 | i==3){
+                    plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z).addRotation(0, Math.PI/2, 0);
+                    }
+                    else{
+                    plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z).addRotation(Math.PI/2, 0, 0);
+                    }
+                    plane.position = BABYLON.Vector3.TransformCoordinates(points[i][j], box_matrix);
                 }
-                else if(i==2 | i==3){
-                plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z).addRotation(0, Math.PI/2, 0);
-                }
-                else{
-                plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z).addRotation(Math.PI/2, 0, 0);
-                }
-                plane.position = BABYLON.Vector3.TransformCoordinates(points[i][j], box_matrix);
             }
-        }
-        ```
-        - 贴片的最终结果
-        ![patches result](./url/patchesResult.png)
+          ```
+        - 贴片的最终结果![patches result](./url/patchesResult.png)
+        - 代码中**box**的数据结构
+        > box:Mesh
+        >> patches
+        >>> 0->盒子后面上所包含的贴片
+        >>>> patch
+        >>>>> box_point->贴片在盒子的本地坐标系中的位置
+        >>> 1->盒子前面上所包含的贴片
+        >>>> patch
+        >>>>> box_point->贴片在盒子的本地坐标系中的位置
+        >>> ......
 
 2. 求可见或部分可见的药盒表面与相机视锥的交点以获得药盒的裸露表面
     + 原理[^1]

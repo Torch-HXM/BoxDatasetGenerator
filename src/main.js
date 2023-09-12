@@ -28,13 +28,11 @@ camera.attachControl(canvas, true);
 createContainer(scene);
 
 // boxes
-var boxes_data = {"counter":0, "max_num":100, "c":2, "box":[], "patches":[], "points":[]};
+var boxes_data = {"counter":0, "max_num":100, "c":2, "box":[]};
 function createBoxes(){
   if(boxes_data["counter"] < boxes_data["max_num"]){
-    const box_and_patches = createRandomBox(boxes_data["counter"], boxes_data["c"], scene);
-    boxes_data["box"].push(box_and_patches["box"]);
-    boxes_data["patches"].push(box_and_patches["patches"]);
-    boxes_data["points"].push(box_and_patches["points"]);
+    var box = createRandomBox(boxes_data["counter"], boxes_data["c"], scene);
+    boxes_data["box"].push(box);
     boxes_data["counter"] += 1;
     setTimeout(createBoxes, 40);
   }
@@ -54,16 +52,15 @@ function keepStill(){
   if(still_counter<still_threshold){
     var if_still = true;
     for(var i=0;i<boxes_data["box"].length;i++){
-      if(boxes_data["box"][i].position.y<0 | boxes_data["box"][i].position.y>container_base_data["size"]){
-        scene.removeMesh(boxes_data["box"][i]);
+      var box = boxes_data["box"][i];
+      if(box.position.y<0 | box.position.y>container_base_data["size"]){
+        scene.removeMesh(box);
         boxes_data["box"].splice(i, 1);
-        boxes_data["patches"].splice(i, 1);
-        boxes_data["points"].splice(i, 1);
         i--;
       }
       else{
-        const box_linear_speed = boxes_data["box"][i].physicsImpostor.getLinearVelocity();
-        const box_angle_speed = boxes_data["box"][i].physicsImpostor.getAngularVelocity();
+        const box_linear_speed = box.physicsImpostor.getLinearVelocity();
+        const box_angle_speed = box.physicsImpostor.getAngularVelocity();
         const if_linear_speed_tolerate = box_linear_speed.x <= speed_limit && box_linear_speed.y <= speed_limit && box_linear_speed.z <= speed_limit;
         const if_angle_speed_tolerate = box_angle_speed.x <= angle_limit && box_angle_speed.y <= angle_limit && box_angle_speed.z <= angle_limit;
 
@@ -96,10 +93,9 @@ scene.onBeforeRenderObservable.add(keepStill);
 // patches
 function applyPatches(){
   console.log("apply patches");
-  for(var k=0;k<boxes_data["patches"].length;k++){
-    var patches = boxes_data["patches"][k];
+  for(var k=0;k<boxes_data["box"].length;k++){
     var box = boxes_data["box"][k];
-    var points = boxes_data["points"][k];
+    var patches = box.patches;
     box.material.alpha = 0.1;
 
     for(var i=0;i<6;i++){
@@ -119,7 +115,7 @@ function applyPatches(){
         else{
           plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z).addRotation(Math.PI/2, 0, 0);
         }
-        plane.position = BABYLON.Vector3.TransformCoordinates(points[i][j], box_matrix);
+        plane.position = BABYLON.Vector3.TransformCoordinates(plane.box_point, box_matrix);
       }
     }
   }

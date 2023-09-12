@@ -132,11 +132,13 @@ export function createRandomBox(counter, c, scene){
   for(var i=0;i<6;i++){
     for(var j=0;j<box_points[i].length;j++){
       var plane = new BABYLON.MeshBuilder.CreatePlane("p"+counter+i+j, {size:1}, scene);
+      plane.box_point = box_points[i][j];
       plane.name = "p"+counter+i+j;
       plane.isVisible = false;
       planes[i].push(plane);
     }
   }
 
-  return {"box":box, "patches":planes, "points":box_points};
+  box.patches = planes;
+  return box;
 }
