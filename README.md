@@ -30,7 +30,7 @@
         - 为了更好的判断盒子表面的可见性和更好的获得可见的面积，我们选择将盒子的表面分割为正方形网格，这些网格代表表面的最小面积单元。后续的表面积计算和可见性计算都将依赖这些最小单元进行。
         - 虽然这样做会使得表面积的计算变得不准确，但是，逐点的计算盒子的表面积显然是不可能实现的，因此，我们只能采用这样的近似的方法。
         - 表面积的最小单元的大小为**s*s**，其中s代表的是机械臂吸盘的直径。![贴片示例](./url/patches.png)
-        - 经过测试，为盒子贴片能够完美的获得贴片是否被隐藏以及隐藏了多少。![贴片的隐藏状况](./url/patchesHide.png)
+        - 经过测试，为盒子贴片能够完美的获得贴片是否被隐藏以及隐藏了多少，即使在贴片完全透明的情况下。![贴片的隐藏状况](./url/patchesHide.png)
         - 为空间中随机位置随机姿态的盒子进行贴片，先将贴片的姿态和位置与盒子同步，这里需要注意，为了后续继续对姿态进行旋转，这里同步姿态必须要用[addRotation](https://doc.babylonjs.com/features/featuresDeepDive/mesh/transforms/center_origin/add_rotations)方法。在同步姿态和位置后，将贴片旋转使他们分别与盒子的六个表面平行。最后将贴片移动至盒子表面。完成盒子的贴片操作。![对自由姿态的盒子贴片](./url/patchesFreePosture.png)
         - ```javascript
             /*特别需要注意的是，由于我们使用了物理引擎，物理引擎中的一些方法造成了**Mesh.rotation**被弃用，且固定为0，因此上面的代码需要更改为如下：*/
@@ -72,5 +72,7 @@
         - **投影矩阵**将视图坐标系下的点转换到规范立方体之中。&emsp;<u>视图坐标系=>规范立方体</u>
     + 相关API
         - [computeWorldMatrix](https://doc.babylonjs.com/features/featuresDeepDive/mesh/transforms/center_origin/ref_frame):&emsp;**模型矩阵**
+## BABYLON的小tip
+1. 让mesh不可见可以大幅度的提高帧率。
 
 [^1]:[3D物体渲染到2D屏幕的矩阵变换过程：模型变换（Modeling Trans）、视图变换(View Trans)和投影变换(Projection Trans)](https://zhuanlan.zhihu.com/p/466508365)

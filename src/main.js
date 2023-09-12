@@ -1,7 +1,7 @@
 import './style.css'
 import * as BABYLON from "babylonjs"
 import * as cannon from "https://cdn.babylonjs.com/cannon.js"
-import {createRandomBox} from "./module/box.js"
+import {POSPAIR, completePOSPAIR, createRandomBox} from "./module/box.js"
 import {createContainer, container_base_data} from "./module/container.js"
 
 // canvas layout
@@ -17,21 +17,24 @@ scene.enablePhysics()
 
 // light
 const light = new BABYLON.HemisphericLight( "light", new BABYLON.Vector3(0, 1, 0), scene);
-light.intensity = 0.7;
+light.intensity = 0.8;
 
 // camera
-var camera = new BABYLON.ArcRotateCamera("camera", 45, 0, 0, new BABYLON.Vector3(0, 0, -0), scene);
+const camera = new BABYLON.ArcRotateCamera("camera", 45, 0, 0, new BABYLON.Vector3(0, 0, -0), scene);
 camera.setPosition(new BABYLON.Vector3(0, 150, -150));
 camera.attachControl(canvas, true);
 
 // container
 createContainer(scene);
 
-// boxes
-var boxes_data = {"counter":0, "max_num":100, "c":2, "box":[]};
+// complete pospair
+completePOSPAIR(scene);
+
+// create boxes and patches
+var boxes_data = {"counter":0, "max_num":180, "c":2, "box":[]};
 function createBoxes(){
   if(boxes_data["counter"] < boxes_data["max_num"]){
-    var box = createRandomBox(boxes_data["counter"], boxes_data["c"], scene);
+    const box = createRandomBox(boxes_data["counter"], boxes_data["c"], scene);
     boxes_data["box"].push(box);
     boxes_data["counter"] += 1;
     setTimeout(createBoxes, 40);
@@ -40,21 +43,24 @@ function createBoxes(){
 console.log("creating box.");
 createBoxes();
 
-// keep still
+// remove boxes's physics's engine
 const speed_limit = 0.5;
 const angle_limit = 0.5;
 const still_threshold = 100;
-var still_counter = 0;
-
-var ifStillObserver = new BABYLON.Observable();
+let still_counter = 0;
 
 function keepStill(){
   if(still_counter<still_threshold){
-    var if_still = true;
-    for(var i=0;i<boxes_data["box"].length;i++){
-      var box = boxes_data["box"][i];
-      if(box.position.y<0 | box.position.y>container_base_data["size"]){
-        scene.removeMesh(box);
+    let if_still = true;
+    for(let i=0;i<boxes_data["box"].length;i++){
+      const box = boxes_data["box"][i];
+      const if_x_out_limit = box.position.x>container_base_data["size"]/2 | box.position.x<-container_base_data["size"]/2
+      const if_y_out_limit = box.position.y<0 | box.position.y>container_base_data["size"];
+      const if_z_out_limit = box.position.z>container_base_data["size"]/2 | box.position.z<-container_base_data["size"]/2
+      
+      if(if_x_out_limit | if_y_out_limit | if_z_out_limit){
+        box.physicsImpostor.sleep();
+        box.isVisible = false;
         boxes_data["box"].splice(i, 1);
         i--;
       }
@@ -75,34 +81,33 @@ function keepStill(){
     }
   }
   else if(still_counter==still_threshold){
-    for(var i=0;i<boxes_data["box"].length;i++){
-      boxes_data["box"][i].physicsImpostor.sleep();
-      delete boxes_data["box"][i].physicsImpostor;
-    }
     still_counter++;
     console.log("keep still", still_counter);
     console.log("box number: %d", boxes_data["box"].length);
   }
   else{
-    ifStillObserver.notifyObservers();
-    scene.onBeforeRenderObservable.remove(keepStill);
+    scene.onBeforeRenderObservable.removeCallback(keepStill);
+    applyPatches();
   }
 }
 scene.onBeforeRenderObservable.add(keepStill);
 
-// patches
+// stick patches to boxes's surfaces
 function applyPatches(){
   console.log("apply patches");
-  for(var k=0;k<boxes_data["box"].length;k++){
-    var box = boxes_data["box"][k];
-    var patches = box.patches;
-    box.material.alpha = 0.1;
-
-    for(var i=0;i<6;i++){
-      for(var j=0;j<patches[i].length;j++){
-        var plane = patches[i][j];
-        plane.isVisible = true;
+  let all = 0;
+  const exposed_material = new BABYLON.StandardMaterial("exposed patch material", scene);
+  exposed_material.diffuseColor = new BABYLON.Color3.Yellow();
+  for(let k=0;k<boxes_data["box"].length;k++){
+    const box = boxes_data["box"][k];
+    box.physicsImpostor.sleep();
+    box.material.alpha = 0;
+    let patches = box.patches;
+    for(let i=0;i<6;i++){
+      for(let j=0;j<patches[i].length;j++){
+        const plane = patches[i][j];
         plane.position = box.position;
+        plane.rotation = new BABYLON.Vector3(0, 0, 0);
         const box_matrix = box.computeWorldMatrix();
         const box_rotation = box.rotationQuaternion.toEulerAngles();
 
@@ -116,21 +121,34 @@ function applyPatches(){
           plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z).addRotation(Math.PI/2, 0, 0);
         }
         plane.position = BABYLON.Vector3.TransformCoordinates(plane.box_point, box_matrix);
+        plane.isVisible = true;
+        all++;
       }
     }
   }
+  console.log("all:%d", all);
 }
-ifStillObserver.addOnce(applyPatches);
-
+// outlight unhidden patches
 // render
 engine.runRenderLoop(()=>{
-  // var numOccluded = 0;
-  // for(var i=0;i<planes.length;i++){
-  //   if(planes[i].isOccluded){
-  //     numOccluded++;
+  // for(let i=0;i<boxes_data["box"].length;i++){
+  //   let occluded_num =0;
+  //   let exposed_num =0;
+  //   let box = boxes_data["box"][i];
+  //   let patches = box.patches;
+  //   for(var j=0;j<6;j++){
+  //     for(var k=0;k<patches[j].length;k++){
+  //       let patch = patches[j][k];
+  //       if(patch.isOccluded){
+  //         occluded_num++;
+  //       }
+  //       else{
+  //         exposed_num++;
+  //       }
+  //     }
   //   }
+  //   console.log("exposed|occluded:%d|%d", exposed_num, occluded_num);
   // }
-  // console.log("all:%d, Occluded:%d.", planes.length, numOccluded);
   scene.render();
 });
 // resize
