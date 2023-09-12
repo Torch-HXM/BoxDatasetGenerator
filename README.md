@@ -31,31 +31,9 @@
         - 虽然这样做会使得表面积的计算变得不准确，但是，逐点的计算盒子的表面积显然是不可能实现的，因此，我们只能采用这样的近似的方法。
         - 表面积的最小单元的大小为**s*s**，其中s代表的是机械臂吸盘的直径。![贴片示例](./url/patches.png)
         - 经过测试，为盒子贴片能够完美的获得贴片是否被隐藏以及隐藏了多少。![贴片的隐藏状况](./url/patchesHide.png)
-        - 为空间中随机位置随机姿态的盒子进行贴片，先将贴片的姿态和位置与盒子同步，这里需要注意，为了后续继续对姿态进行旋转，这里同步姿态必须要用[addRotation](https://doc.babylonjs.com/features/featuresDeepDive/mesh/transforms/center_origin/add_rotations)方法。在同步姿态和位置后，将贴片旋转使他们分别与盒子的六个表面平行。最后将贴片移动至盒子表面。完成盒子的贴片操作。
+        - 为空间中随机位置随机姿态的盒子进行贴片，先将贴片的姿态和位置与盒子同步，这里需要注意，为了后续继续对姿态进行旋转，这里同步姿态必须要用[addRotation](https://doc.babylonjs.com/features/featuresDeepDive/mesh/transforms/center_origin/add_rotations)方法。在同步姿态和位置后，将贴片旋转使他们分别与盒子的六个表面平行。最后将贴片移动至盒子表面。完成盒子的贴片操作。![对自由姿态的盒子贴片](./url/patchesFreePosture.png)
         - ```javascript
-            var box_world_matrix = box.computeWorldMatrix();
-
-            for(var i=0;i<6;i++){
-                for(var j=0;j<patches[i].length;j++){
-                    var plane = patches[i][j];
-                    plane.isVisible = true;
-                    plane.position = box.position;
-                    if(i==0 | i==1){
-                    plane.addRotation(box.rotation.x, box.rotation.y, box.rotation.z);
-                    }
-                    else if(i==2 | i==3){
-                    plane.addRotation(box.rotation.x, box.rotation.y, box.rotation.z).addRotation(0, Math.PI/2, 0);
-                    }
-                    else{
-                    plane.addRotation(box.rotation.x, box.rotation.y, box.rotation.z).addRotation(Math.PI/2, 0, 0);
-                    }
-                    plane.position = BABYLON.Vector3.TransformCoordinates(points[i][j], box_world_matrix);
-                }
-            }
-          ```
-        - ![对自由姿态的盒子贴片](./url/patchesFreePosture.png)
-        - 特别需要注意的是，由于我们使用了物理引擎，物理引擎中的一些方法造成了**Mesh.rotation**被弃用，且固定为0，因此上面的代码需要更改为如下：
-        - ```javascript
+            /*特别需要注意的是，由于我们使用了物理引擎，物理引擎中的一些方法造成了**Mesh.rotation**被弃用，且固定为0，因此上面的代码需要更改为如下：*/
             for(var i=0;i<6;i++){
                 for(var j=0;j<patches[i].length;j++){
                     var plane = patches[i][j];
@@ -78,12 +56,14 @@
             }
           ```
         - 贴片的最终结果![patches result](./url/patchesResult.png)
-        - 代码中**box**的数据结构
-        > box:Mesh
-        >> patches
-        >>> [ 0 ] $\Rightarrow$ 盒子后面上所包含的贴片；[ 1 ] $\Rightarrow$ 盒子前面上所包含的贴片；......
-        >>>> [ num ] $\Rightarrow$ 特定的某个贴片
-        >>>>> box_point $\Rightarrow$ 贴片在盒子的本地坐标系中的位置
+        - ```javascript
+            /*代码中**box**的数据结构*/
+            box                           // 盒子对象，父类为Mesh
+            box.patches                   // 该盒子包含的六个表面上的所有贴片
+            box.patches[i]                // 特定表面的贴片（i=0:盒子前面； i=1:盒子后面； i=......）
+            box.patches[i][j]             // 表面i中贴片的第j个
+            box.patches[i][j].box_point   // 表面i中第j个贴片在盒子local axis下的坐标
+          ```
 
 2. 求可见或部分可见的药盒表面与相机视锥的交点以获得药盒的裸露表面
     + 原理[^1]
