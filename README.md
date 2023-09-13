@@ -74,5 +74,7 @@
         - [computeWorldMatrix](https://doc.babylonjs.com/features/featuresDeepDive/mesh/transforms/center_origin/ref_frame):&emsp;**模型矩阵**
 ## BABYLON的小tip
 1. 让mesh不可见可以大幅度的提高帧率。
+2. 不再使用BABYLON.js的原因
+    1. BABYLON的API无法正确判断遮挡，文档混乱，无法满足工作所需。
 
 [^1]:[3D物体渲染到2D屏幕的矩阵变换过程：模型变换（Modeling Trans）、视图变换(View Trans)和投影变换(Projection Trans)](https://zhuanlan.zhihu.com/p/466508365)
