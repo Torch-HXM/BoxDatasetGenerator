@@ -40,7 +40,7 @@ function boxPointGenerator(width, height, depth, s){
   const x_lengths = [width, width, depth, depth, width, width];
   const y_lengths = [height, height, height, height, depth, depth];
 
-  const pice = 0.01; // let patches over the surface
+  const pice = 0.005; // let patches over the surface
 
   const offset_vectors = [new BABYLON.Vector3(0, 0, depth/2+pice), 
                           new BABYLON.Vector3(0, 0, -(depth/2+pice)),
@@ -123,7 +123,8 @@ export function completePOSPAIR(scene){
     let planes = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[]};
     for(let i=0;i<6;i++){
       for(let j=0;j<box_points[i].length;j++){
-        const plane = new BABYLON.MeshBuilder.CreatePlane("p"+i+j, {size:1}, scene);
+        // const plane = new BABYLON.MeshBuilder.CreatePlane("p"+i+j, {size:1}, scene);
+        const plane = new BABYLON.MeshBuilder.CreateBox("p"+i+j, {width:1, height:1, depth:0.01}, scene);
         plane.material = plane_material;
         plane.material.alpha = 1;
         plane.isVisible = false;
@@ -177,7 +178,9 @@ export function createRandomBox(counter, c, scene){
     {mass:POSPAIR[random_num]["width"]*POSPAIR[random_num]["height"]*POSPAIR[random_num]["depth"], restitution:0.1}, 
     scene
   );
-  box.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(0, -20, 0));
+  // box.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(0, -20, 0));
   box.patches = POSPAIR[random_num]["patches"];
+  box.scvp = false; // 如果已经将patches贴到box的表面，则scvf=true; start caculate visible patches 
+  box.fcvp = false; // 如果还没有计算完遮挡和裸露，则fcvf=false; finish caculate visible patches 
   return box;
 }
