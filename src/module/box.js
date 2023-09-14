@@ -42,9 +42,8 @@ export var POSPAIR = {
  * @param {BABYLON.Scene} scene
  * fill POSPAIR's points and patches features. 
  */
-export function completePOSPAIR(scene){
+export function completePOSPAIR(s, scene){
   let POSPAIR_length = 3;
-  let s = 2;
   for(let i=0;i<POSPAIR_length;i++){
     const box_points = boxPointGenerator(
       POSPAIR[i]["width"], 
@@ -84,7 +83,7 @@ function getTexture(mat, file_path, map_size, pos_pair, width, height, depth, sc
   return {width:width, height:height, depth:depth, faceUV:faceUV};
 }
 
-export function createRandomBox(counter, c, scene){
+export function createRandomBox(counter, scene){
   // create box
   const random_num = Math.floor(Math.random()*3);
   let mat = new BABYLON.StandardMaterial("UV"+counter, scene);

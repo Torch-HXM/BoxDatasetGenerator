@@ -30,13 +30,12 @@ camera.attachControl(canvas, true, true);
 const container = createContainer(scene);
 
 // complete pospair
-completePOSPAIR(scene);
-
+var dataContainer = {"counter":0, "max_num":180, "c":1, "box":[]};
+completePOSPAIR(dataContainer["c"], scene);
 // create boxes and patches
-var dataContainer = {"counter":0, "max_num":180, "c":2, "box":[]};
 function createBoxes(){
   if(dataContainer["counter"] < dataContainer["max_num"]){
-    const box = createRandomBox(dataContainer["counter"], dataContainer["c"], scene);
+    const box = createRandomBox(dataContainer["counter"], scene);
     dataContainer["box"].push(box);
     dataContainer["counter"] += 1;
     setTimeout(createBoxes, 20);
@@ -46,15 +45,13 @@ console.log("creating box.");
 createBoxes();
 
 // detect if boxes remain still
-const speed_limit = 3;
-const angle_limit = 3;
 const still_threshold = 100;
 let still_counter = 0;
 let start_ray = false;
 
 function keepStill(){
   if(still_counter<still_threshold){
-    const if_still = isBoxStill(dataContainer, speed_limit, angle_limit);
+    const if_still = isBoxStill(dataContainer, 3, 3);
     if(if_still) still_counter++;
     else still_counter=0;
   }
@@ -90,6 +87,12 @@ function areaSizeLoop(){
       getExposedsize(container, box, dataContainer, canvas, engine, scene);
     }
   }
+}
+
+// choose rule
+function chooseRuleScore(box){
+  // area size rule
+
 }
 
 

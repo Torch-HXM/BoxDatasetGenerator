@@ -7,6 +7,7 @@
  * @returns patches's position for single surface in box's local axises.
  */
 function surfacePointGenerator(x_length, y_length, offset_vector, rotation_quaternion, s){
+  console.log(s);
     const col = Math.floor(x_length/s);
     const row = Math.floor(y_length/s);
     let surface_points = [];
