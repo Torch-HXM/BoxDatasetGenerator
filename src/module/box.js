@@ -77,7 +77,7 @@ export var POSPAIR = {
       "depth":10,
       "pos_pair":{0:[350, 790, 945, 623], 1:[350, 1390, 945, 1217], 2:[950, 1218, 1115, 790], 3:[177, 621, 350, 194], 4:[350, 1220, 945, 791],  5:[350, 620, 945, 195]},
       "points":{},
-      "patches":{}
+      "spheres":{}
   },
   1:{
       "file_path":"/pics/2.jpg",
@@ -87,7 +87,7 @@ export var POSPAIR = {
       "depth":8,
       "pos_pair":{0:[280, 792, 1000, 651], 1:[280, 211, 1000, 71], 2:[998, 654, 1137, 209], 3:[142, 1233, 280, 789], 4:[280, 1233, 1000, 792],  5:[280, 652, 998, 211]},
       "points":{},
-      "patches":{}
+      "spheres":{}
   },
   2:{
       "file_path":"/pics/6.jpg",
@@ -96,8 +96,7 @@ export var POSPAIR = {
       "height":4,
       "depth":10,
       "pos_pair":{0:[347, 719, 945, 621], 1:[346, 1390, 944, 1218], 2:[998, 654, 1137, 209], 3:[177, 621, 346, 194], 4:[346, 1219, 945, 791],  5:[347, 620, 946, 194]},
-      "points":{},
-      "patches":{}
+      "spheres":{}
   }
 };
 // caculate points and patches
@@ -108,8 +107,6 @@ export var POSPAIR = {
  */
 export function completePOSPAIR(scene){
   let POSPAIR_length = 3;
-  const plane_material = new BABYLON.StandardMaterial("patch material", scene);
-  plane_material.diffuseColor = new BABYLON.Color3.Black();
   let s = 2;
   for(let i=0;i<POSPAIR_length;i++){
     const box_points = boxPointGenerator(
@@ -118,23 +115,20 @@ export function completePOSPAIR(scene){
       POSPAIR[i]["depth"],
       s
       );
-    POSPAIR[i]["points"] = box_points;
-
-    let planes = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[]};
-    for(let i=0;i<6;i++){
-      for(let j=0;j<box_points[i].length;j++){
-        // const plane = new BABYLON.MeshBuilder.CreatePlane("p"+i+j, {size:1}, scene);
-        const plane = new BABYLON.MeshBuilder.CreateBox("p"+i+j, {width:1, height:1, depth:0.01}, scene);
-        plane.material = plane_material;
-        plane.material.alpha = 1;
-        plane.isVisible = false;
-        plane.box_point = box_points[i][j];
-        plane.occlusionQueryAlgorithmType = BABYLON.AbstractMesh.OCCLUSION_ALGORITHM_TYPE_CONSERVATIVE;
-        plane.occlusionType = BABYLON.AbstractMesh.OCCLUSION_TYPE_STRICT;
-        planes[i].push(plane);
+    // balls
+    let spheres = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[]};
+    for(let j=0;j<6;j++){
+      for(let k=0;k<box_points[j].length;k++){
+        const sphere_material = new BABYLON.StandardMaterial("sphere material"+i+j+k, scene);
+        sphere_material.diffuseColor = new BABYLON.Color3.Black();
+        const sphere = new BABYLON.MeshBuilder.CreateSphere("s"+i+j+k, {diameter:1});
+        sphere.material = sphere_material;
+        sphere.renderingGroupId = 1;
+        spheres[j].push(sphere);
       }
     }
-    POSPAIR[i]["patches"] = planes;
+    POSPAIR[i]["spheres"] = spheres;
+    POSPAIR[i]["points"] = box_points;
   }
 }
 
@@ -179,9 +173,10 @@ export function createRandomBox(counter, c, scene){
     {mass:0, restitution:0.1}, 
     scene
   );
+
+  box.points = POSPAIR[random_num]["points"];
+  box.spheres = POSPAIR[random_num]["spheres"];
   // box.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(0, -20, 0));
-  box.patches = POSPAIR[random_num]["patches"];
   box.scvp = false; // 如果已经将patches贴到box的表面，则scvf=true; start caculate visible patches 
-  box.fcvp = false; // 如果还没有计算完遮挡和裸露，则fcvf=false; finish caculate visible patches 
   return box;
 }

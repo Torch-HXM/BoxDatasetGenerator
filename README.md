@@ -32,46 +32,30 @@
         - 表面积的最小单元的大小为**s*s**，其中s代表的是机械臂吸盘的直径。![贴片示例](./url/patches.png)
         - 经过测试，为盒子贴片能够完美的获得贴片是否被隐藏以及隐藏了多少，即使在贴片完全透明的情况下。![贴片的隐藏状况](./url/patchesHide.png)
         - 为空间中随机位置随机姿态的盒子进行贴片，先将贴片的姿态和位置与盒子同步，这里需要注意，为了后续继续对姿态进行旋转，这里同步姿态必须要用[addRotation](https://doc.babylonjs.com/features/featuresDeepDive/mesh/transforms/center_origin/add_rotations)方法。在同步姿态和位置后，将贴片旋转使他们分别与盒子的六个表面平行。最后将贴片移动至盒子表面。完成盒子的贴片操作。![对自由姿态的盒子贴片](./url/patchesFreePosture.png)
-        - ```javascript
-            /*特别需要注意的是，由于我们使用了物理引擎，物理引擎中的一些方法造成了**Mesh.rotation**被弃用，且固定为0，因此上面的代码需要更改为如下：*/
-            for(var i=0;i<6;i++){
-                for(var j=0;j<patches[i].length;j++){
-                    var plane = patches[i][j];
-                    plane.isVisible = true;
-                    plane.position = box.position;
-                    const box_matrix = box.computeWorldMatrix();
-                    const box_rotation = box.rotationQuaternion.toEulerAngles();
-
-                    if(i==0 | i==1){
-                    plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z);
-                    }
-                    else if(i==2 | i==3){
-                    plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z).addRotation(0, Math.PI/2, 0);
-                    }
-                    else{
-                    plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z).addRotation(Math.PI/2, 0, 0);
-                    }
-                    plane.position = BABYLON.Vector3.TransformCoordinates(points[i][j], box_matrix);
-                }
-            }
-          ```
         - 贴片的最终结果![patches result](./url/patchesResult.png)
-        - ```javascript
-            /*代码中**box**的数据结构*/
-            box                           // 盒子对象，父类为Mesh
-            box.patches                   // 该盒子包含的六个表面上的所有贴片
-            box.patches[i]                // 特定表面的贴片（i=0:盒子前面； i=1:盒子后面； i=......）
-            box.patches[i][j]             // 表面i中贴片的第j个
-            box.patches[i][j].box_point   // 表面i中第j个贴片在盒子local axis下的坐标
-          ```
+    + 贴片方法被弃用
+        - 贴片所造成的结果不稳定
+            + 由于Babylon对物体是否被遮挡的检测是异步的所以我们无法获得实时结果
+            + 虽然[isOcclusionQueryInProgress](https://doc.babylonjs.com/typedoc/classes/BABYLON.AbstractMesh#isOcclusionQueryInProgress)能够对是否处理进行一定程度的判断，但是具有不确定性
+            + 不同于单个盒子进行测试，多个盒子在一起测试时效果很糟糕，贴片嵌入盒子内部时会被判定为未被遮挡，而贴片嵌入盒子的状态在多个盒子的场景中是必然的。如果贴片被0距离贴在盒子表面，则会因为嵌入盒子而被判定为未被遮挡；如果与盒子表面有微小距离则会嵌入其他盒子，从而造成未被遮挡的结果
+        - 由于需要新建许多贴片实体，造成十分严重的卡顿
 
-2. 求可见或部分可见的药盒表面与相机视锥的交点以获得药盒的裸露表面
-    + 原理[^1]
-        - **模型矩阵**将局部坐标系下的点转化为世界坐标系下的点。<u>局部坐标系=>世界坐标系</u>
-        - **视图矩阵**将世界坐标系下的点转换为视图坐标系下的点。<u>世界坐标系=>视图坐标系</u>
-        - **投影矩阵**将视图坐标系下的点转换到规范立方体之中。&emsp;<u>视图坐标系=>规范立方体</u>
-    + 相关API
-        - [computeWorldMatrix](https://doc.babylonjs.com/features/featuresDeepDive/mesh/transforms/center_origin/ref_frame):&emsp;**模型矩阵**
+    + 总结
+        - Mesh的[isOccluded](https://doc.babylonjs.com/features/featuresDeepDive/occlusionQueries "occlusionQueries")属性是一个糟糕的属性，它在简单的环境中可以使用，但是稍微复杂的环境就会出现问题。而且，即使能够使用，**isOccluded**的一些特性也无法满足我们的所需
+        - 放弃判断药盒的可见性
+2. 计算盒子各个表面的裸露面积
+    + 原理[playground](https://playground.babylonjs.com/#669TCN#4)
+        - 判断盒子上的点与其在屏幕上呈现的位置的连线是否穿过实体
+    + 对盒子的表面进行划分
+        - 如同“为盒子贴片”中所述的一样，我们将盒子的表面换分为网格，单元格大小为**s*s**，其中s代表的是机械臂吸盘的直径
+        - 获得每一个单元格的中心坐标，如果该中心被遮挡，则认为该单元格被遮挡
+    + 单个盒子实验测试
+        - 对单个盒子进行了测试。在实验中，在每一个单元格中心位置创建了一个小球
+        - 如果小球被遮挡则变为蓝色，反之为黄色
+        - 我们将小球和盒子在不同的渲染层进行了渲染![Ray效果](./url/rayTest.png)
+
+## 演示链接
+1. 射线遮挡[ray](https://playground.babylonjs.com/#669TCN#4)
 ## BABYLON的小tip
 1. 让mesh不可见可以大幅度的提高帧率。
 

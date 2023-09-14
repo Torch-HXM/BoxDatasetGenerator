@@ -16,13 +16,14 @@ const scene = new BABYLON.Scene(engine);
 scene.enablePhysics()
 
 // light
-const light = new BABYLON.HemisphericLight( "light", new BABYLON.Vector3(0, 0, 0), scene);
-light.intensity = 0.8;
+const light = new BABYLON.HemisphericLight( "light", new BABYLON.Vector3(0, 1, 0), scene);
+light.intensity = 0.7;
 
 // camera
 const camera = new BABYLON.ArcRotateCamera("camera", 45, 0, 0, new BABYLON.Vector3(0, 0, -0), scene);
+// camera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
 camera.setPosition(new BABYLON.Vector3(0, 150, -150));
-camera.attachControl(canvas, true);
+camera.attachControl(canvas, true, true);
 
 // container
 // createContainer(scene);
@@ -43,12 +44,12 @@ function createBoxes(){
 console.log("creating box.");
 createBoxes();
 
-// remove boxes's physics's engine
+// detect if boxes remain still
 const speed_limit = 0.5;
 const angle_limit = 0.5;
 const still_threshold = 100;
 let still_counter = 0;
-let start_patches = false;
+let start_ray = false;
 
 function keepStill(){
   if(still_counter<still_threshold){
@@ -88,35 +89,26 @@ function keepStill(){
     console.log("box number: %d", boxes_data["box"].length);
   }
   else{
-    start_patches = true;
+    start_ray = true;
     scene.onBeforeRenderObservable.removeCallback(keepStill);
   }
 }
 scene.onBeforeRenderObservable.add(keepStill);
 
-// patches
-scene.onBeforeRenderObservable.add(noName);
-function noName(){
-  if(start_patches){
+// get points position
+scene.onBeforeRenderObservable.add(areaSizeLoop);
+function areaSizeLoop(){
+  if(start_ray){
     // get the box to caculate.
     let box = getBoxTurn();
     // all the box has done caculating.
     if(box==null){
       console.log("finish.")
-      scene.onBeforeRenderObservable.removeCallback(noName);
+      scene.onBeforeRenderObservable.removeCallback(areaSizeLoop);
     }
-    // wait for patches's caculating.
+    // caculate this box
     else{
-      // done caculate
-      if(ifOccludedDataReady(box)){
-        let exposedOccludedNum = getExposedOccludedPatchesNum(box);
-        box.exposedOccludedNum = exposedOccludedNum;
-        console.log(box.exposedOccludedNum);
-      }
-      // next scene;
-      else{
-        ;
-      }
+      caculateRayIntersect();
     }
   }
 }
@@ -124,115 +116,65 @@ function noName(){
 function getBoxTurn(){
   for(let i=0;i<boxes_data["box"].length;i++){
     let box = boxes_data["box"][i];
-    if(box.scvp){
-      if(box.fcvp){
-        // the box has finish caculating.
-      }
-      else{
-        // patches have stick to the box, but the box haven't finish caculating.
-        return box;
-      }
-    }
-    else{
-      // stick patches to box.
-      let patches = box.patches;
+    if(!box.scvp){
       for(let i=0;i<6;i++){
-        for(let j=0;j<patches[i].length;j++){
-          const plane = patches[i][j];
-          plane.position = box.position;
-          plane.rotation = new BABYLON.Vector3(0, 0, 0);
+        let surface_points = box.points[i];
+        for(let j=0;j<surface_points.length;j++){
           const box_matrix = box.computeWorldMatrix();
-          const box_rotation = box.rotationQuaternion.toEulerAngles();
-
-          if(i==0 | i==1){
-            plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z);
-          }
-          else if(i==2 | i==3){
-            plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z).addRotation(0, Math.PI/2, 0);
-          }
-          else{
-            plane.addRotation(box_rotation.x, box_rotation.y, box_rotation.z).addRotation(Math.PI/2, 0, 0);
-          }
-          plane.position = BABYLON.Vector3.TransformCoordinates(plane.box_point, box_matrix);
-          plane.isVisible = true;
+          box.points[i][j] = BABYLON.Vector3.TransformCoordinates(surface_points[j], box_matrix);
+          box.spheres[i][j].position = box.points[i][j];
         }
       }
       box.scvp = true;
-      // return the box for caculating.
       return box;
     }
   }
   return null; // 此时，所有的box都已经计算完毕.
 }
 
-let ready_counter = 0;
-function ifOccludedDataReady(box){
-  let patches = box.patches;
-  let if_ready = true;
-  
-  if(ready_counter<1){
-    for(let i=0;i<6;i++){
-      for(let j=0;j<patches[i].length;j++){
-        if_ready = if_ready && patches[i][j].isOcclusionQueryInProgress;
-        patches[i][j].isOccluded; // weakup
-        if(!if_ready){
-          return false;
+function caculateRayIntersect(){
+
+}
+
+scene.onAfterRenderObservable.add(()=>{
+  for(let k=0;k<boxes_data["box"].length;k++){
+    let box = boxes_data["box"][k];
+    if(box.scvp){
+      for(let i=0;i<6;i++){
+        for(let j=0;j<box.points[i].length;j++){
+          let point = box.points[i][j];
+          let sphere = box.spheres[i][j];
+          // start ray
+          const worldMatrix = BABYLON.Matrix.Identity();
+          const transformMatrix = scene.getTransformMatrix();
+          const viewport = scene.activeCamera.viewport;
+
+          const screenSpace = BABYLON.Vector3.Project(point, worldMatrix, transformMatrix, viewport);
+          let rayStart = BABYLON.Vector3.Unproject(
+            new BABYLON.Vector3(screenSpace.x * canvas.clientWidth, screenSpace.y * canvas.clientHeight, 0),
+            engine.getRenderWidth(),
+            engine.getRenderHeight(),
+            BABYLON.Matrix.Identity(), 
+            scene.getViewMatrix(),
+            scene.getProjectionMatrix()
+          );
+          
+          let ray = BABYLON.Ray.CreateNewFromTo(rayStart, point);
+          let pick = ray.intersectsMesh(box);
+
+          if(pick.hit){
+            sphere.material.diffuseColor = new BABYLON.Color3.Blue();
+          }
+          else{
+            sphere.material.diffuseColor = new BABYLON.Color3.Yellow();
+          }
         }
       }
     }
-    ready_counter++;
-    return false;
   }
-  else{
-    ready_counter = 0;
-    return true;
-  }
-}
+})
 
-function getExposedOccludedPatchesNum(box){
-  let patches = box.patches;
-  let exposedOccludedNum = {0:{"exposed":0, "occluded":0}, 
-                            1:{"exposed":0, "occluded":0}, 
-                            2:{"exposed":0, "occluded":0}, 
-                            3:{"exposed":0, "occluded":0}, 
-                            4:{"exposed":0, "occluded":0}, 
-                            5:{"exposed":0, "occluded":0}};
-  for(let i=0;i<6;i++){
-    for(let j=0;j<patches[i].length;j++){
-      if(patches[i][j].isOccluded){
-        exposedOccludedNum[i]["occluded"]++;
-      }
-      else{
-        exposedOccludedNum[i]["exposed"]++;
-      }
-    }
-  }
-
-  box.fcvp = true;
-
-  return exposedOccludedNum;
-}
-
-// let getOccludedResultCounter = 0;
-// let stop_sign = 0;
 engine.runRenderLoop(()=>{
-  for(let i=0;i<boxes_data["box"].length;i++){
-    let box = boxes_data["box"][i];
-    let patches = box.patches;
-    let expose_num = 0;
-    let hide_num = 0;
-    for(let j=0;j<6;j++){
-      for(let k=0;k<patches[j].length;k++){
-        if(patches[j][k].isOccluded){
-          hide_num++;
-        }
-        else{
-          expose_num++;
-        }
-      }
-    }
-    console.log("boxId:%d, expose|hide:%d|%d.", i, expose_num, hide_num);
-  }
   scene.render();
 });
 // resize
