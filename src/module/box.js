@@ -1,68 +1,5 @@
-import * as BABYLON from "babylonjs"
-import * as cannon from "https://cdn.babylonjs.com/cannon.js"
 import {container_base_data} from "./container.js"
-
-/**
- * @param {int} x_length first choose the edge that parallel to x axis, second choose the edge that vertical to x axis.
- * @param {int} y_length the other edge except the one chosen by x_length.
- * @param {BABYLON.Vector3} offset_vector the surface position offset to box's center.
- * @param {BABYLON.Vector3} rotation_quaternion the surface rotation quaternion.
- * @param {int} s the diameter of robot's arm's sucker.
- * @returns patches's position for single surface in box's local axises.
- */
-function surfacePointGenerator(x_length, y_length, offset_vector, rotation_quaternion, s){
-  const col = Math.floor(x_length/s);
-  const row = Math.floor(y_length/s);
-  let surface_points = [];
-
-  for(let c=0;c<col;c++){
-    for(let r=0;r<row;r++){
-      let point_vector = new BABYLON.Vector3((c+0.5)*s-x_length/2, (r+0.5)*s-y_length/2, 0);
-      point_vector = point_vector.applyRotationQuaternion(rotation_quaternion);
-      point_vector = point_vector.add(offset_vector);
-      surface_points.push(point_vector);
-    }
-  }
-  return surface_points;
-}
-
-/**
- * 
- * @param {int} width the box's width
- * @param {int} height the box's height
- * @param {itn} depth the box's depth
- * @param {int} s the diameter of robot's arm's sucker.
- * @returns patches's position for all surfaces in box's local axises.
- */
-function boxPointGenerator(width, height, depth, s){
-  let box_points = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[]};
-
-  const x_lengths = [width, width, depth, depth, width, width];
-  const y_lengths = [height, height, height, height, depth, depth];
-
-  const pice = 0.005; // let patches over the surface
-
-  const offset_vectors = [new BABYLON.Vector3(0, 0, depth/2+pice), 
-                          new BABYLON.Vector3(0, 0, -(depth/2+pice)),
-                          new BABYLON.Vector3(width/2+pice, 0, 0),
-                          new BABYLON.Vector3(-(width/2+pice), 0, 0),
-                          new BABYLON.Vector3(0, height/2+pice, 0),
-                          new BABYLON.Vector3(0, -(height/2+pice), 0)];
-
-  const rotation_quaternions = [BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z, 0),
-                              BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z, 0),
-                              BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, Math.PI/2),
-                              BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, Math.PI/2),
-                              BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, Math.PI/2),
-                              BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, Math.PI/2)];
-  
-  for(let i=0;i<offset_vectors.length;i++){
-    const surface_points = surfacePointGenerator(x_lengths[i], y_lengths[i], offset_vectors[i], rotation_quaternions[i], s);
-    box_points[i] = surface_points;
-  }
-
-  return box_points;
-}
+import {boxPointGenerator} from "./point.js"
 
 /*
  * for POSPAIR
@@ -123,7 +60,7 @@ export function completePOSPAIR(scene){
         sphere_material.diffuseColor = new BABYLON.Color3.Black();
         const sphere = new BABYLON.MeshBuilder.CreateSphere("s"+i+j+k, {diameter:1});
         sphere.material = sphere_material;
-        sphere.renderingGroupId = 1;
+        // sphere.renderingGroupId = 1;
         spheres[j].push(sphere);
       }
     }
@@ -163,20 +100,48 @@ export function createRandomBox(counter, c, scene){
   );
 
   const box = new BABYLON.MeshBuilder.CreateBox("box"+counter, options, scene);
-  // box.material = mat;
-  box.position = new BABYLON.Vector3((Math.random()*container_base_data["size"]/2-container_base_data["size"]/4)/5, container_base_data["size"]/5, (Math.random()*container_base_data["size"]/2-container_base_data["size"]/4)/5);
+  box.material = mat;
+  box.position = new BABYLON.Vector3((Math.random()*container_base_data["size"]/2-container_base_data["size"]/4), container_base_data["size"], (Math.random()*container_base_data["size"]/2-container_base_data["size"]/4));
   box.rotation = new BABYLON.Vector3(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
   box.physicsImpostor = new BABYLON.PhysicsImpostor(
     box, 
     BABYLON.PhysicsImpostor.BoxImpostor, 
-    // {mass:POSPAIR[random_num]["width"]*POSPAIR[random_num]["height"]*POSPAIR[random_num]["depth"], restitution:0.1}, 
-    {mass:0, restitution:0.1}, 
+    {mass:POSPAIR[random_num]["width"]*POSPAIR[random_num]["height"]*POSPAIR[random_num]["depth"], restitution:0.1}, 
+    // {mass:0, restitution:0.1}, 
     scene
   );
 
-  box.points = POSPAIR[random_num]["points"];
+  box.localPoints = POSPAIR[random_num]["points"];
+  box.worldPoints = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[]};
+  box.exposedAreaScale = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0};
   box.spheres = POSPAIR[random_num]["spheres"];
-  // box.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(0, -20, 0));
+  box.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(0, -20, 0));
   box.scvp = false; // 如果已经将patches贴到box的表面，则scvf=true; start caculate visible patches 
   return box;
+}
+
+export function isBoxStill(dataContainer, speed_limit, angle_limit){
+  let if_still = true;
+  for(let i=0;i<dataContainer["box"].length;i++){
+    const box = dataContainer["box"][i];
+    const if_x_out_limit = box.position.x>container_base_data["size"]/2 | box.position.x<-container_base_data["size"]/2
+    const if_y_out_limit = box.position.y<0 | box.position.y>container_base_data["size"]+20;
+    const if_z_out_limit = box.position.z>container_base_data["size"]/2 | box.position.z<-container_base_data["size"]/2
+    
+    if(if_x_out_limit | if_y_out_limit | if_z_out_limit){
+      box.physicsImpostor.sleep();
+      box.isVisible = false;
+      dataContainer["box"].splice(i, 1);
+      i--;
+      console.log("delete.");
+    }
+    else{
+      const box_linear_speed = box.physicsImpostor.getLinearVelocity();
+      const box_angle_speed = box.physicsImpostor.getAngularVelocity();
+      const if_linear_speed_tolerate = Math.abs(box_linear_speed.x) <= speed_limit && Math.abs(box_linear_speed.y) <= speed_limit && Math.abs(box_linear_speed.z) <= speed_limit;
+      const if_angle_speed_tolerate = Math.abs(box_angle_speed.x) <= angle_limit && Math.abs(box_angle_speed.y) <= angle_limit && Math.abs(box_angle_speed.z) <= angle_limit;
+      if_still = if_still && if_linear_speed_tolerate && if_angle_speed_tolerate;
+    }
+  }
+  return if_still;
 }
