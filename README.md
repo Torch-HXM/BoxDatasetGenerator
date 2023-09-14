@@ -20,7 +20,7 @@
 ### 世界和相机视角中的抓取面
 抓取面是指抓取点所在的表面。获得抓取面是我们获得所有标签的前提是。这里需要注意，裸露在世界中的药盒表面并不一定存在于相机视角中，也就是说，即使这个裸露面是存在的，如果相机拍不到我们就应该当它不存在。因此，这里的抓取面应该特指相机视角中的抓取面。而获得该抓取面，需要判断药盒的表面是否存在于相机的视锥点云中。
 判断逻辑如下：
-1. 判断药盒在相机视角中是否可见或部分可见
+1. ~~判断药盒在相机视角中是否可见或部分可见（弃用）~~
     + 原理[API](https://doc.babylonjs.com/features/featuresDeepDive/occlusionQueries "occlusionQueries")
         - 该判断的主要作用是减少后续对盒子表面点的计算，所以试图先抛弃一部分不可见的盒子。
     + isOccluded的奇怪特性
@@ -43,6 +43,7 @@
     + 总结
         - Mesh的[isOccluded](https://doc.babylonjs.com/features/featuresDeepDive/occlusionQueries "occlusionQueries")属性是一个糟糕的属性，它在简单的环境中可以使用，但是稍微复杂的环境就会出现问题。而且，即使能够使用，**isOccluded**的一些特性也无法满足我们的所需
         - 放弃判断药盒的可见性
+
 2. 计算盒子各个表面的裸露面积
     + 原理[playground](https://playground.babylonjs.com/#669TCN#4)
         - 判断盒子上的点与其在屏幕上呈现的位置的连线是否穿过实体
