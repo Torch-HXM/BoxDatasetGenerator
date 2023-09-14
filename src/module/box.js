@@ -169,13 +169,14 @@ export function createRandomBox(counter, c, scene){
   );
 
   const box = new BABYLON.MeshBuilder.CreateBox("box"+counter, options, scene);
-  box.material = mat;
-  box.position = new BABYLON.Vector3((Math.random()*container_base_data["size"]/2-container_base_data["size"]/4), container_base_data["size"], (Math.random()*container_base_data["size"]/2-container_base_data["size"]/4));
+  // box.material = mat;
+  box.position = new BABYLON.Vector3((Math.random()*container_base_data["size"]/2-container_base_data["size"]/4)/5, container_base_data["size"]/5, (Math.random()*container_base_data["size"]/2-container_base_data["size"]/4)/5);
   box.rotation = new BABYLON.Vector3(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
   box.physicsImpostor = new BABYLON.PhysicsImpostor(
     box, 
     BABYLON.PhysicsImpostor.BoxImpostor, 
-    {mass:POSPAIR[random_num]["width"]*POSPAIR[random_num]["height"]*POSPAIR[random_num]["depth"], restitution:0.1}, 
+    // {mass:POSPAIR[random_num]["width"]*POSPAIR[random_num]["height"]*POSPAIR[random_num]["depth"], restitution:0.1}, 
+    {mass:0, restitution:0.1}, 
     scene
   );
   // box.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(0, -20, 0));

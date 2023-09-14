@@ -25,13 +25,13 @@ camera.setPosition(new BABYLON.Vector3(0, 150, -150));
 camera.attachControl(canvas, true);
 
 // container
-createContainer(scene);
+// createContainer(scene);
 
 // complete pospair
 completePOSPAIR(scene);
 
 // create boxes and patches
-var boxes_data = {"counter":0, "max_num":100, "c":2, "box":[]};
+var boxes_data = {"counter":0, "max_num":1, "c":2, "box":[]};
 function createBoxes(){
   if(boxes_data["counter"] < boxes_data["max_num"]){
     const box = createRandomBox(boxes_data["counter"], boxes_data["c"], scene);
@@ -216,23 +216,23 @@ function getExposedOccludedPatchesNum(box){
 // let getOccludedResultCounter = 0;
 // let stop_sign = 0;
 engine.runRenderLoop(()=>{
-  // for(let i=0;i<boxes_data["box"].length;i++){
-  //   let box = boxes_data["box"][i];
-  //   let patches = box.patches;
-  //   let expose_num = 0;
-  //   let hide_num = 0;
-  //   for(let j=0;j<6;j++){
-  //     for(let k=0;k<patches[j].length;k++){
-  //       if(patches[j][k].isOccluded){
-  //         hide_num++;
-  //       }
-  //       else{
-  //         expose_num++;
-  //       }
-  //     }
-  //   }
-  //   console.log("boxId:%d, expose|hide:%d|%d.", i, expose_num, hide_num);
-  // }
+  for(let i=0;i<boxes_data["box"].length;i++){
+    let box = boxes_data["box"][i];
+    let patches = box.patches;
+    let expose_num = 0;
+    let hide_num = 0;
+    for(let j=0;j<6;j++){
+      for(let k=0;k<patches[j].length;k++){
+        if(patches[j][k].isOccluded){
+          hide_num++;
+        }
+        else{
+          expose_num++;
+        }
+      }
+    }
+    console.log("boxId:%d, expose|hide:%d|%d.", i, expose_num, hide_num);
+  }
   scene.render();
 });
 // resize
